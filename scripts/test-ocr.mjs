@@ -5,6 +5,7 @@ import vm from 'node:vm';
 const source = await readFile(new URL('../panel/panel.js', import.meta.url), 'utf8');
 const context = vm.createContext({ domLines: [], selectionSize: { width: 1000, height: 1000 } });
 vm.runInContext(source.slice(source.indexOf('function extractReliableOcrLines('), source.indexOf('function toggleRawText(')), context);
+vm.runInContext(source.slice(source.indexOf('function textAsParagraph('), source.indexOf('function resetCopyButton(')), context);
 const word = (text, x0, confidence = 96) => ({ text, confidence, bbox: { x0, x1: x0 + Math.max(10, text.length * 10), y0: 100, y1: 120 } });
 const line = (words) => ({ words, text: words.map((w) => w.text).join(' '), confidence: 96, bbox: { x0: 0, x1: 600, y0: 100, y1: 120 } });
 assert.equal(context.cleanOcrLine(line([word('GTA', 0), word('6', 40), word('&', 60), word('More', 80)]), 1000, 1000).text, 'GTA 6 & More');
@@ -33,4 +34,6 @@ assert.equal(context.linesAreSimilar({ ...title, text: 'ক' }, { ...title, text
 context.domLines.push({ text: 'Google Play', top: 200, height: 20, left: 0, width: 200 });
 const bilingual = context.combinePageAndImageText([{ ...title, text: 'বাংলা কীবোর্ড', confidence: 90 }]).text;
 assert.ok(bilingual.includes('বাংলা কীবোর্ড') && bilingual.includes('Google Play'), 'Bengali image text and English page text coexist');
+assert.equal(context.textAsParagraph('First line\nSecond line\n\nThird line'), 'First line Second line Third line');
+assert.equal(context.textAsParagraph('  বাংলা লেখা  \n  English text  '), 'বাংলা লেখা English text');
 console.log('OCR regression checks passed, including Bengali alphabet tiles and bilingual output.');

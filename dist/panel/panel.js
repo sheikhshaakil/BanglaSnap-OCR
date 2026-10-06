@@ -2,8 +2,8 @@
 
 const LANGUAGE_LABELS = {
   'ben+eng': 'বাংলা + English',
-  ben: 'শুধু বাংলা',
-  eng: 'English only',
+  ben: 'বাংলা',
+  eng: 'English',
 };
 const STATUS_LABELS = {
   'loading tesseract core': 'Loading OCR engine…',
@@ -27,10 +27,12 @@ const elements = {
   filterSummary: document.querySelector('#filter-summary'),
   filterMessage: document.querySelector('#filter-message'),
   toggleRawButton: document.querySelector('#toggle-raw-button'),
-  copyButton: document.querySelector('#copy-button'),
+  copyParagraphButton: document.querySelector('#copy-paragraph-button'),
+  copyLinesButton: document.querySelector('#copy-lines-button'),
   scanAnotherButton: document.querySelector('#scan-another-button'),
   closeButton: document.querySelector('#close-button'),
   copyStatus: document.querySelector('#copy-status'),
+  panelHeader: document.querySelector('#panel-header'),
 };
 
 const parameters = new URLSearchParams(location.search);
@@ -47,6 +49,9 @@ let filteredText = '';
 let rawText = '';
 let showingRawText = false;
 let currentOcrPass = 0;
+let copyStatusTimer = null;
+let dragPointerId = null;
+let panelFitFrame = null;
 const totalOcrPasses = language === 'ben+eng' ? 5 : 3;
 
 function setProgress(label, progress) {
@@ -67,10 +72,20 @@ function handleProgress(message) {
 function showError(message) {
   elements.errorMessage.textContent = message;
   elements.errorMessage.hidden = false;
+  requestPanelFit();
 }
 
-function postAction(action) {
-  window.parent.postMessage({ source: 'banglasnap-panel', action, language }, '*');
+function postAction(action, details = {}) {
+  window.parent.postMessage({ source: 'banglasnap-panel', action, language, ...details }, '*');
+}
+
+function requestPanelFit() {
+  cancelAnimationFrame(panelFitFrame);
+  panelFitFrame = requestAnimationFrame(() => {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+    postAction('resize-panel', { height: footer.getBoundingClientRect().bottom + 16 });
+  });
 }
 
 async function loadAndCropCapture() {
@@ -179,7 +194,7 @@ async function runOcr() {
     ? 'Exact page text + OCR'
     : Number.isFinite(combined.confidence) ? `${Math.round(combined.confidence)}% OCR confidence` : '';
   elements.textSection.hidden = false;
-  elements.copyButton.disabled = !filteredText;
+  setCopyButtonsDisabled(!filteredText);
 
   const removedCount = colorLines.removedCount + contrastLines.removedCount + invertedLines.removedCount + supplementalLines.reduce((sum, result) => sum + result.removedCount, 0) + combined.duplicateCount;
   if (removedCount > 0 || domLines.length) {
@@ -198,6 +213,7 @@ async function runOcr() {
       ? 'Only uncertain shapes were detected, so they were hidden. Select a tighter area around clear text or show all detections.'
       : 'No reliable text was detected. Try scanning a tighter area around larger, clearer text.');
   }
+  requestPanelFit();
 }
 
 async function prepareImageVariants(blob) {
@@ -516,25 +532,91 @@ function toggleRawText() {
   showingRawText = !showingRawText;
   elements.resultText.value = showingRawText ? rawText : filteredText;
   elements.toggleRawButton.textContent = showingRawText ? 'Show reliable text' : 'Show all detections';
-  elements.copyButton.disabled = !elements.resultText.value;
+  setCopyButtonsDisabled(!elements.resultText.value);
+  requestPanelFit();
 }
 
-async function copyText() {
+function setCopyButtonsDisabled(disabled) {
+  elements.copyParagraphButton.disabled = disabled;
+  elements.copyLinesButton.disabled = disabled;
+}
+
+function textAsParagraph(text) {
+  return text.split(/\s*\n+\s*/).filter(Boolean).join(' ').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+function resetCopyButton(button) {
+  button.classList.remove('copied', 'copy-error');
+  button.querySelector('.button-label').textContent = button.dataset.defaultLabel;
+}
+
+function showCopyState(button, { announcement, label, state = 'copied' }) {
+  clearTimeout(copyStatusTimer);
+  for (const copyButton of [elements.copyParagraphButton, elements.copyLinesButton]) resetCopyButton(copyButton);
+  button.classList.add(state);
+  button.querySelector('.button-label').textContent = label;
+  elements.copyStatus.textContent = announcement;
+  copyStatusTimer = setTimeout(() => {
+    resetCopyButton(button);
+    elements.copyStatus.textContent = '';
+  }, 1800);
+}
+
+async function copyText({ preserveLineBreaks, button }) {
+  const value = preserveLineBreaks ? elements.resultText.value.trim() : textAsParagraph(elements.resultText.value);
+  if (!value) return;
   try {
-    await navigator.clipboard.writeText(elements.resultText.value);
-    elements.copyStatus.textContent = 'Copied';
+    await navigator.clipboard.writeText(value);
+    showCopyState(button, {
+      announcement: preserveLineBreaks ? 'Copied with line breaks' : 'Copied as a paragraph',
+      label: 'Copied',
+    });
   } catch (error) {
     elements.resultText.focus();
     elements.resultText.select();
-    elements.copyStatus.textContent = 'Press Ctrl/Cmd+C to copy';
+    showCopyState(button, {
+      announcement: 'Automatic copy failed. Press Ctrl or Command and C.',
+      label: 'Press Ctrl/Cmd+C',
+      state: 'copy-error',
+    });
   }
 }
 
+function startPanelDrag(event) {
+  if (event.button !== 0 || event.target.closest('button')) return;
+  dragPointerId = event.pointerId;
+  elements.panelHeader.setPointerCapture(event.pointerId);
+  elements.panelHeader.classList.add('dragging');
+  postAction('drag-start', { screenX: event.screenX, screenY: event.screenY });
+  event.preventDefault();
+}
+
+function movePanelDrag(event) {
+  if (event.pointerId !== dragPointerId) return;
+  postAction('drag-move', { screenX: event.screenX, screenY: event.screenY });
+}
+
+function endPanelDrag(event) {
+  if (event.pointerId !== dragPointerId) return;
+  dragPointerId = null;
+  elements.panelHeader.classList.remove('dragging');
+  postAction('drag-end');
+}
+
 elements.languageLabel.textContent = LANGUAGE_LABELS[language] || LANGUAGE_LABELS['ben+eng'];
-elements.copyButton.addEventListener('click', copyText);
+elements.copyParagraphButton.addEventListener('click', () => copyText({ preserveLineBreaks: false, button: elements.copyParagraphButton }));
+elements.copyLinesButton.addEventListener('click', () => copyText({ preserveLineBreaks: true, button: elements.copyLinesButton }));
+elements.resultText.addEventListener('input', () => setCopyButtonsDisabled(!elements.resultText.value.trim()));
 elements.toggleRawButton.addEventListener('click', toggleRawText);
 elements.scanAnotherButton.addEventListener('click', () => postAction('scan-another'));
 elements.closeButton.addEventListener('click', () => postAction('close'));
+elements.panelHeader.addEventListener('pointerdown', startPanelDrag);
+elements.panelHeader.addEventListener('pointermove', movePanelDrag);
+elements.panelHeader.addEventListener('pointerup', endPanelDrag);
+elements.panelHeader.addEventListener('pointercancel', endPanelDrag);
+elements.preview.addEventListener('load', requestPanelFit);
+new ResizeObserver(requestPanelFit).observe(elements.resultText);
+requestPanelFit();
 
 (async () => {
   try {

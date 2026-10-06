@@ -1,6 +1,6 @@
 {
   "name": "banglasnap-ocr",
-  "version": "0.8.0",
+  "version": "0.11.2",
   "private": true,
   "description": "Local Bangla and English OCR Chrome extension",
   "scripts": {

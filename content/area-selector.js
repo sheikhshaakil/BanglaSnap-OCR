@@ -13,6 +13,10 @@
     if (!panel || event.source !== panel.iframe.contentWindow || event.data?.source !== 'banglasnap-panel') return;
 
     if (event.data.action === 'close') removePanel();
+    if (event.data.action === 'drag-start') startPanelDrag(event.data.screenX, event.data.screenY);
+    if (event.data.action === 'drag-move') moveResultPanel(event.data.screenX, event.data.screenY);
+    if (event.data.action === 'drag-end') panel.drag = null;
+    if (event.data.action === 'resize-panel') resizeResultPanel(event.data.height);
     if (event.data.action === 'scan-another') {
       const language = event.data.language || 'ben+eng';
       removePanel();
@@ -21,6 +25,39 @@
       }).catch(() => showToast('Could not start another scan. Click the extension and try again.', true));
     }
   });
+
+  function startPanelDrag(screenX, screenY) {
+    if (!panel || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+    const rect = panel.host.getBoundingClientRect();
+    panel.drag = { screenX, screenY, left: rect.left, top: rect.top };
+  }
+
+  function moveResultPanel(screenX, screenY) {
+    if (!panel?.drag || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+    const rect = panel.host.getBoundingClientRect();
+    const left = Math.min(
+      Math.max(8, panel.drag.left + screenX - panel.drag.screenX),
+      Math.max(8, window.innerWidth - rect.width - 8),
+    );
+    const top = Math.min(
+      Math.max(8, panel.drag.top + screenY - panel.drag.screenY),
+      Math.max(8, window.innerHeight - rect.height - 8),
+    );
+    panel.host.style.setProperty('left', `${left}px`, 'important');
+    panel.host.style.setProperty('top', `${top}px`, 'important');
+    panel.host.style.setProperty('right', 'auto', 'important');
+  }
+
+  function resizeResultPanel(requestedHeight) {
+    if (!panel || !Number.isFinite(requestedHeight)) return;
+    const maxHeight = Math.max(280, window.innerHeight - 16);
+    const height = Math.min(maxHeight, Math.max(420, Math.ceil(requestedHeight)));
+    panel.host.style.setProperty('height', `${height}px`, 'important');
+    const rect = panel.host.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 8) {
+      panel.host.style.setProperty('top', `${Math.max(8, window.innerHeight - height - 8)}px`, 'important');
+    }
+  }
 
   function startSelection(language, captureId) {
     if (session) {
@@ -255,7 +292,7 @@
       'top: 16px !important',
       'right: 16px !important',
       'width: min(480px, calc(100vw - 32px)) !important',
-      'height: min(700px, calc(100vh - 32px)) !important',
+      'height: min(640px, calc(100vh - 32px)) !important',
       'z-index: 2147483647 !important',
       'display: block !important',
     ].join(';');

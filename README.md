@@ -4,12 +4,25 @@ Local Bangla and English OCR for a selected area of the current Chrome tab.
 
 Version 0.8 uses the scalable SVG BanglaSnap logo directly in the popup and OCR result panel. Chrome does not support SVG manifest or toolbar icons, so the build includes PNG sizes generated from the same SVG artwork for those browser surfaces. The green, red, warm off-white, charcoal, and cool-gray brand color system is applied to the popup, selection overlay, and OCR result panel.
 
+Version 0.9 adds a compact movable result panel, a vertically resizable result field, paragraph and line-preserving copy formats, and a dedicated Capture Another Area action.
+
+Copy confirmation appears inside the selected action with an animated checkmark, keeping the panel layout stable. Interface actions use a consistent outline icon style.
+
+Version 0.10 replaces the fixed language radio list with a persistent select control that scales to additional languages. Image upload opens in a focused, scrollable modal workspace instead of expanding the main popup.
+
+Version 0.11 adds a persistent header switch for pausing and enabling OCR. The toolbar and popup logo change to monochrome while paused, OCR actions are disabled, and the compact popup now hugs its content. Image OCR uses a simpler upload icon.
+
+Version 0.11.1 updates the toolbar icon directly from the popup for reliable active/paused feedback, properly insets the language chevron, and displays every selected-area capture inside a fixed aspect-fit preview without cropping.
+
+The main extension popup uses a linked Sheikh Shakil copyright footer, while the OCR result panel keeps the accuracy reminder where it is relevant.
+
 ## What works
 
 - Click the extension and drag around text on the current webpage.
 - Automatically capture, crop, and recognize the selected screen area.
 - Upload an image as a secondary option.
-- Recognize Bangla + English (default), Bangla only, or English only.
+- Recognize বাংলা + English, বাংলা, or English, and remember the last selected language.
+- Pause or enable the extension from the popup and remember that state across browser sessions.
 - See OCR progress and edit the Unicode result.
 - Copy the recognized text.
 - Run all OCR locally from files packaged with the extension.

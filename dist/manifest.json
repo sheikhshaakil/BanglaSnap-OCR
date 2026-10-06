@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "BanglaSnap OCR",
-  "version": "0.8.0",
-  "description": "Local Bangla and English OCR for images in Chrome.",
+  "version": "0.11.2",
+  "description": "Bangla and English OCR for selected webpage areas and images.",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",

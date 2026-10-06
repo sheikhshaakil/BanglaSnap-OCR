@@ -1,4 +1,36 @@
 const CAPTURE_KEY_PREFIX = 'banglasnap-capture:';
+const EXTENSION_ENABLED_KEY = 'extensionEnabled';
+const ACTIVE_ICONS = {
+  16: 'assets/icons/icon-16.png',
+  32: 'assets/icons/icon-32.png',
+  48: 'assets/icons/icon-48.png',
+  128: 'assets/icons/icon-128.png',
+};
+const DISABLED_ICONS = {
+  16: 'assets/icons/icon-disabled-16.png',
+  32: 'assets/icons/icon-disabled-32.png',
+  48: 'assets/icons/icon-disabled-48.png',
+  128: 'assets/icons/icon-disabled-128.png',
+};
+
+async function syncActionIcon(enabled) {
+  await chrome.action.setIcon({ path: enabled ? ACTIVE_ICONS : DISABLED_ICONS });
+  await chrome.action.setTitle({ title: enabled ? 'BanglaSnap OCR' : 'BanglaSnap OCR — Paused' });
+}
+
+async function restoreExtensionState() {
+  const stored = await chrome.storage.local.get({ [EXTENSION_ENABLED_KEY]: true });
+  await syncActionIcon(stored[EXTENSION_ENABLED_KEY] !== false);
+}
+
+chrome.runtime.onInstalled.addListener(restoreExtensionState);
+chrome.runtime.onStartup.addListener(restoreExtensionState);
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[EXTENSION_ENABLED_KEY]) {
+    syncActionIcon(changes[EXTENSION_ENABLED_KEY].newValue !== false).catch(console.error);
+  }
+});
+restoreExtensionState().catch(console.error);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'BEGIN_SELECTION') {
@@ -32,6 +64,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function beginSelection(tabId, language) {
   if (!Number.isInteger(tabId)) throw new Error('No active webpage was found.');
+
+  const stored = await chrome.storage.local.get({ [EXTENSION_ENABLED_KEY]: true });
+  if (stored[EXTENSION_ENABLED_KEY] === false) {
+    throw new Error('BanglaSnap OCR is paused. Turn it on from the extension popup.');
+  }
 
   const tab = await chrome.tabs.get(tabId);
   const screenshotUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
