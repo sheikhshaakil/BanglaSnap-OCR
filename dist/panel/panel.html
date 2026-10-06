@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BanglaSnap OCR Result</title>
+    <link rel="stylesheet" href="panel.css">
+  </head>
+  <body>
+    <main class="panel-app">
+      <header>
+        <div class="brand-lockup">
+          <img class="brand-logo" src="../assets/logo.svg" alt="">
+          <div>
+            <h1>BanglaSnap OCR</h1>
+            <p id="language-label">Reading selected area…</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span>Local OCR</span>
+          <button id="close-button" type="button" aria-label="Close BanglaSnap OCR">×</button>
+        </div>
+      </header>
+
+      <section class="preview-card" aria-labelledby="preview-heading">
+        <div class="section-heading">
+          <h2 id="preview-heading">Selected area</h2>
+        </div>
+        <img id="capture-preview" alt="Selected screen area">
+      </section>
+
+      <section id="progress-section" class="progress-section" aria-live="polite">
+        <div>
+          <strong id="progress-label">Preparing selected area…</strong>
+          <span id="progress-percent">0%</span>
+        </div>
+        <progress id="progress-bar" max="100" value="0">0%</progress>
+      </section>
+
+      <div id="error-message" class="error-message" role="alert" hidden></div>
+
+      <section id="text-section" class="text-section" hidden>
+        <div class="section-heading">
+          <h2>Recognized text</h2>
+          <span id="confidence-label"></span>
+        </div>
+        <textarea id="result-text" lang="bn" spellcheck="false" aria-label="Recognized text"></textarea>
+        <div id="filter-summary" class="filter-summary" hidden>
+          <span id="filter-message"></span>
+          <button id="toggle-raw-button" type="button">Show all detections</button>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="copy-button" class="primary-button" type="button" disabled>Copy Text</button>
+        <button id="scan-another-button" class="secondary-button" type="button">Scan Another Area</button>
+        <span id="copy-status" role="status"></span>
+      </div>
+
+      <footer>Processed locally on this device.</footer>
+    </main>
+
+    <script src="../vendor/tesseract/tesseract.min.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

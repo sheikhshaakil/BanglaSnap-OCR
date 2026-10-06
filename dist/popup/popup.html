@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BanglaSnap OCR</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div class="brand-lockup">
+          <img class="brand-logo" src="../assets/logo.svg" alt="">
+          <div>
+            <h1>BanglaSnap OCR</h1>
+            <p>Bangla &amp; English OCR for Chrome</p>
+          </div>
+        </div>
+        <span class="privacy-badge">Local OCR</span>
+      </header>
+
+      <section class="card capture-card" aria-labelledby="capture-heading">
+        <span class="primary-label">PRIMARY</span>
+        <h2 id="capture-heading">Select text from this page</h2>
+        <p>Drag a box around any visible Bangla or English text.</p>
+        <button id="capture-button" class="primary-button capture-button" type="button">Select Area on Page</button>
+      </section>
+
+      <fieldset class="card language-card">
+        <legend>Recognition language</legend>
+        <label class="radio-row">
+          <input type="radio" name="language" value="ben+eng" checked>
+          <span><strong lang="bn">বাংলা + English</strong><small>Best for mixed documents</small></span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="language" value="ben">
+          <span><strong lang="bn">শুধু বাংলা</strong><small>Bangla only</small></span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="language" value="eng">
+          <span><strong>English only</strong><small>English text</small></span>
+        </label>
+      </fieldset>
+
+      <div id="error-message" class="message error-message" role="alert" hidden></div>
+
+      <details class="card upload-card">
+        <summary>
+          <span><strong>Upload an image instead</strong><small>Secondary option</small></span>
+        </summary>
+        <div class="upload-content">
+          <div class="section-heading">
+            <h2 id="image-heading">Choose an image</h2>
+            <button id="clear-button" class="text-button" type="button" hidden>Clear</button>
+          </div>
+          <label class="file-picker" for="image-input">
+            <span class="file-picker-title">Choose image</span>
+            <span class="file-picker-hint">PNG, JPEG, WebP, GIF, or BMP</span>
+          </label>
+          <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden>
+          <div id="image-summary" class="image-summary" hidden>
+            <img id="image-preview" alt="Selected image preview">
+            <div class="image-details">
+              <strong id="image-name"></strong>
+              <span id="image-size"></span>
+              <button id="change-button" class="secondary-button" type="button">Choose another</button>
+            </div>
+          </div>
+          <button id="run-button" class="primary-button upload-run-button" type="button" disabled>Run OCR on Image</button>
+        </div>
+      </details>
+
+      <section id="progress-section" class="progress-section" aria-live="polite" hidden>
+        <div class="progress-copy">
+          <span id="progress-label">Preparing OCR…</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <progress id="progress-bar" max="100" value="0">0%</progress>
+      </section>
+
+      <section id="result-section" class="result-section" aria-labelledby="result-heading" hidden>
+        <div class="section-heading">
+          <h2 id="result-heading">Recognized text</h2>
+          <span id="confidence-label" class="confidence"></span>
+        </div>
+        <textarea id="result-text" lang="bn" spellcheck="false" aria-label="Recognized text"></textarea>
+        <div class="result-actions">
+          <button id="copy-button" class="primary-button" type="button">Copy Text</button>
+          <span id="copy-status" class="copy-status" role="status"></span>
+        </div>
+      </section>
+
+      <footer>Images are processed on this device.</footer>
+    </main>
+
+    <script src="../vendor/tesseract/tesseract.min.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

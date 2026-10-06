@@ -1,0 +1,17 @@
+{
+  "name": "banglasnap-ocr",
+  "version": "0.8.0",
+  "private": true,
+  "description": "Local Bangla and English OCR Chrome extension",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/test-visible-text.mjs && node scripts/test-ocr.mjs"
+  },
+  "dependencies": {
+    "@tesseract.js-data/ben": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0"
+  }
+}
